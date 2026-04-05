@@ -1,12 +1,40 @@
 "use client";
 
-import { useState } from "react";
-import { products, categories } from "@/lib/products";
+import { useState, useEffect } from "react";
+import { supabase } from "@/rib/db";
 import Link from "next/link";
-import Image from "next/image";
+
+type Product = {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  description: string;
+  image: string;
+  whatsapp: string;
+};
 
 export default function Home() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>(["All"]);
   const [activeCategory, setActiveCategory] = useState("All");
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  async function fetchProducts() {
+    const { data } = await supabase
+      .from("products")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (data) {
+      setProducts(data);
+      const unique = ["All", ...Array.from(new Set(data.map((p: Product) => p.category)))];
+      setCategories(unique);
+    }
+  }
 
   const filtered = activeCategory === "All"
     ? products
@@ -52,6 +80,9 @@ export default function Home() {
 
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {filtered.length === 0 && (
+            <p className="text-gray-400 text-sm col-span-3">No products yet.</p>
+          )}
           {filtered.map((product) => (
             <Link key={product.id} href={`/product/${product.id}`}>
               <div className="group cursor-pointer">

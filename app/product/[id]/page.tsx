@@ -1,6 +1,15 @@
-import { products } from "@/lib/products";
+import { supabase } from "@/rib/db";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+
+async function getProduct(id: string) {
+  const { data } = await supabase
+    .from("products")
+    .select("*")
+    .eq("id", id)
+    .single();
+  return data;
+}
 
 export default async function ProductPage({
   params,
@@ -8,7 +17,7 @@ export default async function ProductPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const product = products.find((p) => p.id === id);
+  const product = await getProduct(id);
 
   if (!product) return notFound();
 
@@ -47,17 +56,13 @@ export default async function ProductPage({
           <p className="text-gray-500 leading-relaxed mb-10">{product.description}</p>
 
           <div className="flex flex-col gap-4">
-            {/* WhatsApp Button */}
             <a
               href={whatsappUrl}
               target="_blank"
-              rel="noreferrer noopener"
               className="bg-green-500 hover:bg-green-400 text-white px-8 py-4 rounded-full text-sm font-medium text-center transition-colors"
             >
               Order via WhatsApp
             </a>
-
-            {/* Back */}
             <Link
               href="/"
               className="border border-gray-200 hover:border-gray-400 text-gray-600 px-8 py-4 rounded-full text-sm font-medium text-center transition-colors"
