@@ -26,6 +26,8 @@ const emptyForm = {
 export default function Dashboard() {
   const [products, setProducts] = useState<Product[]>([]);
   const [form, setForm] = useState(emptyForm);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const router = useRouter();
@@ -50,27 +52,68 @@ export default function Dashboard() {
     setProducts(data || []);
   }
 
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  }
+
+  async function uploadImage(): Promise<string | null> {
+    if (!imageFile) return null;
+
+    const fileExt = imageFile.name.split(".").pop();
+    const fileName = `${Date.now()}.${fileExt}`;
+
+    const { error } = await supabase.storage
+      .from("products")
+      .upload(fileName, imageFile);
+
+    if (error) {
+      setMessage("Image upload failed.");
+      return null;
+    }
+
+    const { data } = supabase.storage
+      .from("products")
+      .getPublicUrl(fileName);
+
+    return data.publicUrl;
+  }
+
   async function handleAdd() {
-    if (!form.name || !form.price || !form.category || !form.image) {
-      setMessage("Please fill in all fields.");
+    if (!form.name || !form.price || !form.category || !imageFile) {
+      setMessage("Please fill in all fields and select an image.");
       return;
     }
     setLoading(true);
+    setMessage("");
+
+    const imageUrl = await uploadImage();
+    if (!imageUrl) {
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.from("products").insert([
       {
         name: form.name,
         price: Number(form.price),
         category: form.category,
         description: form.description,
-        image: form.image,
+        image: imageUrl,
         whatsapp: form.whatsapp,
       },
     ]);
+
     if (error) {
       setMessage("Error adding product.");
     } else {
-      setMessage("Product added!");
+      setMessage("Product added successfully!");
       setForm(emptyForm);
+      setImageFile(null);
+      setImagePreview("");
       fetchProducts();
     }
     setLoading(false);
@@ -128,13 +171,6 @@ export default function Dashboard() {
               onChange={(e) => setForm({ ...form, category: e.target.value })}
               className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-gray-500"
             />
-            <input
-              type="text"
-              placeholder="Image URL"
-              value={form.image}
-              onChange={(e) => setForm({ ...form, image: e.target.value })}
-              className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-gray-500"
-            />
             <textarea
               placeholder="Description"
               rows={3}
@@ -142,8 +178,32 @@ export default function Dashboard() {
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-gray-500 resize-none sm:col-span-2"
             />
+
+            {/* Image Upload */}
+            <div className="sm:col-span-2">
+              <label className="block text-sm text-gray-400 mb-2">Product Image</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-gray-800 file:text-gray-300 hover:file:bg-gray-700"
+              />
+              {imagePreview && (
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="mt-4 w-32 h-32 object-cover rounded-lg"
+                />
+              )}
+            </div>
           </div>
-          {message && <p className="text-green-400 text-sm mt-4">{message}</p>}
+
+          {message && (
+            <p className={`text-sm mt-4 ${message.includes("success") ? "text-green-400" : "text-red-400"}`}>
+              {message}
+            </p>
+          )}
+
           <button
             onClick={handleAdd}
             disabled={loading}
