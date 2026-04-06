@@ -1,6 +1,7 @@
 import { supabase } from "@/rib/db";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import PaystackButton from "@/app/components/PaystackButton";
 
 async function getProduct(id: string) {
   const { data } = await supabase
@@ -27,9 +28,9 @@ export default async function ProductPage({
   return (
     <main className="min-h-screen" style={{ background: "#fdf8f5" }}>
       {/* Nav */}
-      <nav className="px-8 py-5 flex justify-between items-center sticky top-0 z-10"
+      <nav className="px-5 py-4 flex justify-between items-center sticky top-0 z-10"
         style={{ background: "#fdf8f5", borderBottom: "1px solid #f0e0d6" }}>
-        <h1 className="text-2xl font-bold italic" style={{ color: "#c4846a" }}>
+        <h1 className="text-xl font-bold italic" style={{ color: "#c4846a" }}>
           Pearl & Poise
         </h1>
         <Link href="/" className="text-sm transition-colors" style={{ color: "#9e7060" }}>
@@ -37,7 +38,7 @@ export default async function ProductPage({
         </Link>
       </nav>
 
-      <div className="max-w-5xl mx-auto px-8 py-16 grid grid-cols-1 md:grid-cols-2 gap-16">
+      <div className="max-w-5xl mx-auto px-5 py-12 grid grid-cols-1 md:grid-cols-2 gap-12">
         {/* Image */}
         <div className="rounded-3xl overflow-hidden shadow-sm"
           style={{ aspectRatio: "3/4", background: "#f9e8e0" }}>
@@ -54,17 +55,24 @@ export default async function ProductPage({
             style={{ color: "#c4a882", letterSpacing: "0.3em" }}>
             {product.category}
           </span>
-          <h1 className="text-4xl font-bold italic mb-4" style={{ color: "#2c1810" }}>
+          <h1 className="text-3xl md:text-4xl font-bold italic mb-4" style={{ color: "#2c1810" }}>
             {product.name}
           </h1>
-          <p className="text-3xl font-bold mb-6" style={{ color: "#c4846a" }}>
+          <p className="text-2xl md:text-3xl font-bold mb-6" style={{ color: "#c4846a" }}>
             ₦{product.price.toLocaleString()}
           </p>
-          <p className="text-lg leading-relaxed mb-10" style={{ color: "#9e7060" }}>
+          <p className="text-base leading-relaxed mb-10" style={{ color: "#9e7060" }}>
             {product.description}
           </p>
 
           <div className="flex flex-col gap-4">
+            {/* Paystack Button */}
+            <PaystackButton
+              amount={product.price}
+              productName={product.name}
+            />
+
+            {/* WhatsApp Button */}
             <a
               href={whatsappUrl}
               target="_blank"
@@ -72,6 +80,7 @@ export default async function ProductPage({
               style={{ background: "#25D366" }}>
               Order via WhatsApp
             </a>
+
             <Link
               href="/"
               className="px-8 py-4 text-sm font-medium text-center rounded-full transition-all"
@@ -83,7 +92,7 @@ export default async function ProductPage({
       </div>
 
       {/* Footer */}
-      <footer className="px-8 py-8 text-center text-xs tracking-widest uppercase mt-10"
+      <footer className="px-5 py-8 text-center text-xs tracking-widest uppercase mt-10"
         style={{ background: "#2c1810", color: "#9e7060", letterSpacing: "0.15em" }}>
         © 2024 Pearl & Poise. All Rights Reserved.
       </footer>
